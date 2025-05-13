@@ -3,6 +3,7 @@ package com.rt.robotexcel.demo;
 import java.util.List;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatLightLaf;
@@ -11,6 +12,7 @@ import com.rt.robotexcel.demo.config.ConfigurationManager;
 import com.rt.robotexcel.demo.config.ExcelColumnConfig;
 import com.rt.robotexcel.demo.excel.ExcelUpdater;
 import com.rt.robotexcel.demo.gui.ColumnManagerWindow;
+import com.rt.robotexcel.demo.gui.InitialScreen;
 import com.rt.robotexcel.demo.robot.RobotUtil;
 import com.rt.robotexcel.demo.util.ClipboardManager;
 
@@ -18,6 +20,30 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 public class ExcelPurchaseRobot {
     public static void main(String[] args) {
+        // Verificar se deve abrir a tela inicial
+        if (args.length > 0 && args[0].equals("--nogui")) {
+            runRobot();
+            return;
+        }
+        openInitialScreen();
+      
+    }
+    
+    public static void openInitialScreen() {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(new FlatLightLaf());
+            } catch (Exception ex) {
+                System.err.println("Failed to initialize LaF");
+            }
+            FlatLightLaf.setup();
+            
+            InitialScreen screen = new InitialScreen();
+            screen.setVisible(true);
+        });
+    }
+    
+    public static void runRobot() {
         System.setProperty("java.awt.headless", "false");
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -27,7 +53,6 @@ public class ExcelPurchaseRobot {
         FlatLightLaf.setup();
 
         try {
-
             Dotenv dotenv = Dotenv.load();
             ApiClient api = new ApiClient(dotenv.get("BASE_URL"));
 
@@ -51,12 +76,10 @@ public class ExcelPurchaseRobot {
             }
 
             // Aguarda posicionar o cursor na primeira célula
-            System.out.println("Posicione o cursor na coluna do pedido e aguarde 5 segundos...");
-            Thread.sleep(5000);
-
+            System.out.println("Posicione o cursor na coluna do pedido...");
+            Thread.sleep(1000);
             RobotUtil robot = new RobotUtil();
             while (true) {
-
                 ClipboardManager.clear();
                 robot.enterCell();
                 robot.selectAll();
@@ -68,8 +91,8 @@ public class ExcelPurchaseRobot {
                     String pedidoTrimmed = pedido.trim();
                     String response = api.searchPurchaseOrder(pedidoTrimmed);
                     if (response != null) {
-                        int sucess = excelUpdater.updatePurchaseOrder(response);
-                        if (sucess == 0) {
+                        int success = excelUpdater.updatePurchaseOrder(response);
+                        if (success == 0) {
                             System.out.println("Pedido " + pedidoTrimmed + " atualizado com sucesso.");
                         } else {
                             System.out.println("Falha ao atualizar o pedido " + pedidoTrimmed + ".");
@@ -79,7 +102,7 @@ public class ExcelPurchaseRobot {
                         System.out.println("Pedido " + pedidoTrimmed + " não encontrado.");
                     }
                 } else {
-                    System.out.println("Numero do pedido inválido: " + pedido);
+                    System.out.println("Número do pedido inválido: " + pedido);
                     break;
                 }
             }

@@ -30,7 +30,18 @@ public class ApiClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             this.sessionCookie = response.headers().firstValue("Set-Cookie")
                 .orElse(null);
-            return response.statusCode() == 200;
+            HttpRequest protectedRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/auth/protected"))
+                .header("Cookie", sessionCookie)
+                .GET()
+                .build();
+            HttpResponse<String> protectedResponse = client.send(protectedRequest, HttpResponse.BodyHandlers.ofString());
+            if (protectedResponse.statusCode() != 200) {
+                return false;
+            } else {
+                System.out.println("Login successful!");
+                return true;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -55,4 +66,21 @@ public class ApiClient {
             return null;
         }
     }
+
+    public boolean testConnection() {
+        try {            
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl))
+                .timeout(Duration.ofSeconds(10))
+                .GET()
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }
