@@ -25,6 +25,8 @@ public class InitialScreen extends JFrame {
     private JPasswordField passwordField;
     private JTextField baseUrlField;
     private boolean isRunning = false;
+    private JRadioButton searchByPedidoRadio;
+    private JRadioButton searchByNfRadio;
     
     public static void main(String[] args) {
         try {
@@ -56,12 +58,14 @@ public class InitialScreen extends JFrame {
         JPanel headerPanel = createHeaderPanel();
         JPanel instructionsPanel = createInstructionsPanel();
         JPanel configPanel = createConfigPanel();
+        JPanel searchOptionsPanel = createSearchOptionsPanel();
         JPanel controlPanel = createControlPanel();
         
         // Adiciona os painéis ao layout principal
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(instructionsPanel, BorderLayout.CENTER);
         mainPanel.add(configPanel, BorderLayout.EAST);
+        mainPanel.add(searchOptionsPanel, BorderLayout.WEST);
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
         // Define o painel principal como conteúdo da janela
@@ -80,6 +84,25 @@ public class InitialScreen extends JFrame {
         return headerPanel;
     }
     
+    private JPanel createSearchOptionsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("Opções de Busca"));
+        
+        searchByPedidoRadio = new JRadioButton("Buscar por Nº do Pedido", true);
+        searchByNfRadio = new JRadioButton("Buscar por Nº da NF", false);
+        
+        ButtonGroup searchTypeGroup = new ButtonGroup();
+        searchTypeGroup.add(searchByPedidoRadio);
+        searchTypeGroup.add(searchByNfRadio);
+        
+        panel.add(searchByPedidoRadio);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(searchByNfRadio);
+        
+        return panel;
+    }
+    
     private JPanel createInstructionsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Instruções"));
@@ -94,10 +117,11 @@ public class InitialScreen extends JFrame {
             "2. Verifique se as colunas foram configuradas corretamente. " +
             "Se necessário, use o botão \"Configurar Colunas\".\n\n" +
             "3. Abra sua planilha Excel de acordo com as colunas configuradas.\n\n" +
-            "4. Clique em \"Iniciar Robô\" e posicione o curso na coluna com o numero do pedido\n\n" +
-            "5. Quando o robô iniciar, não mexa no mouse ou teclado para não interferir na automação.\n\n" +
-            "6. O robô irá ler o número do pedido, buscar os dados na API e preencher a linha, " +
-            "depois moverá para o próximo pedido automaticamente."
+            "4. Selecione se deseja buscar por número de pedido ou por NF.\n\n" +
+            "5. Clique em \"Iniciar Robô\" e posicione o cursor na coluna com o número.\n\n" +
+            "6. Quando o robô iniciar, não mexa no mouse ou teclado para não interferir na automação.\n\n" +
+            "7. O robô irá ler o número, buscar os dados na API e preencher a linha, " +
+            "depois moverá para o próximo registro automaticamente."
         );
         
         panel.add(new JScrollPane(instructionsText), BorderLayout.CENTER);
@@ -245,8 +269,11 @@ public class InitialScreen extends JFrame {
         if (isRunning) return;
         
         isRunning = true;
-
-        countdownLabel.setText("Clique no n° do pedido de compra " + secondsRemaining + "...");
+        
+        String searchType = searchByPedidoRadio.isSelected() ? "pedido" : "nota fiscal";
+        
+        secondsRemaining = 8;
+        countdownLabel.setText("Clique no n° do " + searchType + " " + secondsRemaining + "...");
         
         countdownTimer = new Timer(1000, new ActionListener() {
             @Override
@@ -254,7 +281,7 @@ public class InitialScreen extends JFrame {
                 secondsRemaining--;
                 
                 if (secondsRemaining > 0) {
-                    countdownLabel.setText("Clique no n° do pedido de compra, Iniciando em " + secondsRemaining + "...");
+                    countdownLabel.setText("Clique no n° do " + searchType + ", Iniciando em " + secondsRemaining + "...");
                 } else {
                     countdownTimer.stop();
                     countdownLabel.setText("Robô em execução!");
@@ -272,7 +299,13 @@ public class InitialScreen extends JFrame {
                                 return;
                             }
                             
-                            String[] args = new String[0];
+                            String[] args;
+                            if (searchByNfRadio.isSelected()) {
+                                args = new String[]{"--search-by-nf"};
+                            } else {
+                                args = new String[]{"--search-by-pedido"};
+                            }
+                            
                             ExcelPurchaseRobot.main(args);
                             
                             SwingUtilities.invokeLater(() -> {

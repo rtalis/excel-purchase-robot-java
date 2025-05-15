@@ -67,6 +67,24 @@ public class ApiClient {
         }
     }
 
+    public String searchPurchaseByInvoice(String numeroNF) {
+        try {
+            String url = String.format("%s/api/purchase_by_nf?num_nf=%s", baseUrl, numeroNF);
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Cookie", sessionCookie)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public boolean testConnection() {
         try {            
             HttpRequest request = HttpRequest.newBuilder()
@@ -82,5 +100,4 @@ public class ApiClient {
             return false;
         }
     }
-
 }

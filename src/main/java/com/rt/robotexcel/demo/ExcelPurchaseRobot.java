@@ -19,14 +19,27 @@ import com.rt.robotexcel.demo.util.ClipboardManager;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class ExcelPurchaseRobot {
+    private static boolean searchByNF = false;
+    
     public static void main(String[] args) {
-        // Verificar se deve abrir a tela inicial
-        if (args.length > 0 && args[0].equals("--nogui")) {
-            runRobot();
-            return;
+        // Parse arguments
+        for (String arg : args) {
+            if (arg.equals("--search-by-nf")) {
+                searchByNF = true;
+            } else if (arg.equals("--search-by-pedido")) {
+                searchByNF = false;
+            } else if (arg.equals("--nogui")) {
+                runRobot();
+                return;
+            }
         }
-        openInitialScreen();
-      
+        
+        // If no arguments or not the --nogui flag, open the initial screen
+        if (args.length == 0) {
+            openInitialScreen();
+        } else {
+            runRobot();
+        }
     }
     
     public static void openInitialScreen() {
@@ -76,7 +89,8 @@ public class ExcelPurchaseRobot {
             }
 
             // Aguarda posicionar o cursor na primeira célula
-            System.out.println("Posicione o cursor na coluna do pedido...");
+            String searchType = searchByNF ? "nota fiscal" : "pedido";
+            System.out.println("Posicione o cursor na coluna do " + searchType + "...");
             Thread.sleep(1000);
             RobotUtil robot = new RobotUtil();
             while (true) {
@@ -85,24 +99,34 @@ public class ExcelPurchaseRobot {
                 robot.selectAll();
                 robot.copyToClipboard();
 
-                String pedido = ClipboardManager.getContent();
-                System.out.println("Pedido copiado: " + pedido);
-                if (pedido != null && pedido.trim().matches("\\d+")) {
-                    String pedidoTrimmed = pedido.trim();
-                    String response = api.searchPurchaseOrder(pedidoTrimmed);
+                String numero = ClipboardManager.getContent();
+                System.out.println(searchType + " copiado: " + numero);
+                
+                if (numero != null && numero.trim().matches("\\d+")) {
+                    String numeroTrimmed = numero.trim();
+                    String response;
+                    
+                    // Decide qual API usar com base na opção de busca
+                    if (searchByNF) {
+                        response = api.searchPurchaseByInvoice(numeroTrimmed);
+                    } else {
+                        response = api.searchPurchaseOrder(numeroTrimmed);
+                    }
+                    
                     if (response != null) {
                         int success = excelUpdater.updatePurchaseOrder(response);
                         if (success == 0) {
-                            System.out.println("Pedido " + pedidoTrimmed + " atualizado com sucesso.");
-                        } else {
-                            System.out.println("Falha ao atualizar o pedido " + pedidoTrimmed + ".");
+                            System.out.println(searchType + " " + numeroTrimmed + " atualizado com sucesso.");
+                       
+                        } else if (success == 1) {
+                            System.out.println("Nenhum " + searchType + " encontrado para o número: " + numeroTrimmed);
+                        }   else {
+                            System.out.println("Falha ao atualizar o " + searchType + " " + numeroTrimmed + ".");
                             break;
                         }
-                    } else {
-                        System.out.println("Pedido " + pedidoTrimmed + " não encontrado.");
-                    }
+                    } 
                 } else {
-                    System.out.println("Número do pedido inválido: " + pedido);
+                    System.out.println("Número do " + searchType + " inválido: " + numero);
                     break;
                 }
             }

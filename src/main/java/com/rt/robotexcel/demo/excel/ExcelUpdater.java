@@ -110,9 +110,15 @@ public class ExcelUpdater {
     public int updatePurchaseOrder(String jsonResponse) {
         try {
             JSONObject json = new JSONObject(jsonResponse);
-            JSONObject purchase = json.getJSONArray("purchases")
-                .getJSONObject(0)
-                .getJSONObject("order");
+            JSONObject purchase;
+            
+            if (json.has("purchases")) {
+                purchase = json.getJSONArray("purchases")
+                    .getJSONObject(0)
+                    .getJSONObject("order");
+            } else {
+                purchase = json;
+            }
             
             // Encontra posição do PEDIDO
             int pedidoIndex = -1;
@@ -149,7 +155,7 @@ public class ExcelUpdater {
                 String value = extractValueFromJson(purchase, config);
                 if (!value.isEmpty()) {
                     ClipboardManager.setContent(value);
-                    robot.pasteFromClipboard();
+               robot.pasteFromClipboard();
                 }
             }
             // Posiciona no PEDIDO novamente
