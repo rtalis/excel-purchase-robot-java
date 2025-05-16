@@ -10,13 +10,13 @@
     "position": 0
   },
   {
-    "jsonField": "observacao",
-    "displayName": "OBSERVAÇÃO",
+    "jsonField": "func_nome",
+    "displayName": "FUNCIONÁRIO",
     "position": 1
   },
   {
-    "jsonField": "genero (extrair do final da observação)",
-    "displayName": "GENERO",
+    "jsonField": "observacao",
+    "displayName": "OBSERVAÇÃO",
     "position": 2
   }
 ]

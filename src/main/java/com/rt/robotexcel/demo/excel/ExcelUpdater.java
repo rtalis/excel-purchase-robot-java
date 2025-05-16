@@ -111,31 +111,33 @@ public class ExcelUpdater {
         try {
             JSONObject json = new JSONObject(jsonResponse);
             JSONObject purchase;
-            
+            String searchMode = "nfes[0].num_nf";
             if (json.has("purchases")) {
                 purchase = json.getJSONArray("purchases")
                     .getJSONObject(0)
                     .getJSONObject("order");
+                searchMode = "cod_pedc";
             } else {
                 purchase = json;
             }
             
+           
             // Encontra posição do PEDIDO
-            int pedidoIndex = -1;
+            int referenceIndex = -1;
             for (int i = 0; i < columnConfigs.size(); i++) {
-                if (columnConfigs.get(i).getJsonField().equals("cod_pedc")) {
-                    pedidoIndex = i;
+                if (columnConfigs.get(i).getJsonField().equals(searchMode)) {
+                    referenceIndex = i;
                     break;
                 }
             }
             
-            if (pedidoIndex == -1) {
-                throw new IllegalStateException("Coluna PEDIDO é obrigatória");
+            if (referenceIndex == -1) {
+                throw new IllegalStateException(String.format("Campo %s não encontrado na configuração.", searchMode));
             }
             
             // Posiciona no PEDIDO
             robot.pressEsc();
-            int actualPosition = pedidoIndex - 1;
+            int actualPosition = referenceIndex - 1;
 
             for (ExcelColumnConfig config : columnConfigs) {
                 int moves = config.getPosition();
@@ -160,12 +162,12 @@ public class ExcelUpdater {
             }
             // Posiciona no PEDIDO novamente
             
-            while (actualPosition + 1 > pedidoIndex) {
+            while (actualPosition + 1 > referenceIndex) {
                     robot.pressLeftArrow();
                     actualPosition--;
                 
             }      
-            while (actualPosition + 1 < pedidoIndex) {
+            while (actualPosition + 1 < referenceIndex) {
                 robot.pressRightArrow();
                 actualPosition++;
             
