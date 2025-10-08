@@ -29,7 +29,8 @@ public class ExcelUpdater {
     private String extractValueFromJson(JSONObject purchase, ExcelColumnConfig config) {
         try {
             if (config.getJsonField().isEmpty()) return ""; // coluna em branco
-
+        
+        // Tratamentos especiais para alguns campos
             if (config.getDisplayName().equals("GENERO")) {
                 String observacao = purchase.optString("observacao", "");
                 if (!observacao.isEmpty()) {
@@ -70,9 +71,14 @@ public class ExcelUpdater {
                 return outputFormat.format(dt);
             }
             
-            if (config.getJsonField().startsWith("total_")) {
+            if (config.getJsonField().equals("adjusted_total")) {
                 return String.format("%.2f", purchase.getDouble(config.getJsonField()));
             }
+            if (config.getJsonField().equals("total_bruto")) {
+                return String.format("%.2f", purchase.getDouble(config.getJsonField()));
+            }
+
+
             
             return purchase.optString(config.getJsonField(), "");
         } catch (Exception e) {
@@ -157,7 +163,7 @@ public class ExcelUpdater {
                 String value = extractValueFromJson(purchase, config);
                 if (!value.isEmpty()) {
                     ClipboardManager.setContent(value);
-               robot.pasteFromClipboard();
+                    robot.pasteFromClipboard();
                 }
             }
             // Posiciona no PEDIDO novamente

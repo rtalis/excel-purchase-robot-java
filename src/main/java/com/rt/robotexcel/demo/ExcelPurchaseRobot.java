@@ -27,7 +27,7 @@ public class ExcelPurchaseRobot {
             if (arg.equals("--search-by-nf")) {
                 searchByNF = true;
             } else if (arg.equals("--search-by-pedido")) {
-                searchByNF = false;
+                searchByNF = false; 
             } else if (arg.equals("--nogui")) {
                 runRobot();
                 return;

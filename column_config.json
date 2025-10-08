@@ -1,7 +1,7 @@
 [
   {
-    "jsonField": "nfes[0].num_nf",
-    "displayName": "NF",
+    "jsonField": "observacao (extrair número)",
+    "displayName": "SOLIC.",
     "position": -1
   },
   {
@@ -10,13 +10,38 @@
     "position": 0
   },
   {
-    "jsonField": "func_nome",
-    "displayName": "FUNCIONÁRIO",
+    "jsonField": "fornecedor_descricao",
+    "displayName": "FORNECEDOR",
     "position": 1
+  },
+  {
+    "jsonField": "dt_emis",
+    "displayName": "DT. PED.",
+    "position": 2
+  },
+  {
+    "jsonField": "adjusted_total",
+    "displayName": "VALOR TOTAL COM DESC.",
+    "position": 3
+  },
+  {
+    "jsonField": "nfes[0].num_nf",
+    "displayName": "NF",
+    "position": 4
+  },
+  {
+    "jsonField": "nfes[0].dt_ent",
+    "displayName": "CHEGADA",
+    "position": 5
+  },
+  {
+    "jsonField": "genero (extrair do final da observação)",
+    "displayName": "GENERO",
+    "position": 6
   },
   {
     "jsonField": "observacao",
     "displayName": "OBSERVAÇÃO",
-    "position": 2
+    "position": 7
   }
 ]

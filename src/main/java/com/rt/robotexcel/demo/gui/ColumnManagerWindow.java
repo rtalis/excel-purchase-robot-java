@@ -10,7 +10,6 @@ import javax.swing.table.*;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.rt.robotexcel.demo.config.ConfigurationManager;
 import com.rt.robotexcel.demo.config.ExcelColumnConfig;
-import com.rt.robotexcel.demo.excel.ExcelUpdater;
 
 public class ColumnManagerWindow extends JFrame {
     public static void main(String[] args) {
@@ -29,13 +28,12 @@ public class ColumnManagerWindow extends JFrame {
     private JTable table;
     private ArrayList<String> availableColumns;
     private ArrayList<String> selectedColumns;
-    private ExcelUpdater excelUpdater;
     private JList<String> availableList;
 
     public ColumnManagerWindow() {
         setTitle("Gerenciador de Colunas");
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         // Inicializa as listas
         availableColumns = new ArrayList<>();
@@ -55,7 +53,8 @@ public class ColumnManagerWindow extends JFrame {
         availableColumns.add("PEDIDO");
         availableColumns.add("FORNECEDOR");
         availableColumns.add("DT. PED.");
-        availableColumns.add("VALOR");
+        availableColumns.add("VALOR ITENS");
+        availableColumns.add("VALOR TOTAL COM DESC.");
         availableColumns.add("NF");
         availableColumns.add("CHEGADA");
         availableColumns.add("CONTATO");
@@ -181,7 +180,8 @@ public class ColumnManagerWindow extends JFrame {
             case "PEDIDO": return "cod_pedc";
             case "FORNECEDOR": return "fornecedor_descricao";
             case "DT. PED.": return "dt_emis";
-            case "VALOR": return "total_bruto";
+            case "VALOR ITENS": return "total_bruto";
+            case "VALOR TOTAL COM DESC.": return "adjusted_total";
             case "NF": return "nfes[0].num_nf";
             case "CHEGADA": return "nfes[0].dt_ent";
             case "SOLIC.": return "observacao (extrair número)";
