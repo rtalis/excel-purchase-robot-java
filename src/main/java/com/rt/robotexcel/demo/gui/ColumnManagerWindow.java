@@ -70,6 +70,9 @@ public class ColumnManagerWindow extends JFrame {
         availableColumns.add("ID PEDIDO");
         availableColumns.add("OBSERVAÇÃO");
         availableColumns.add("[COLUNA EM BRANCO]");
+        availableColumns.add("VALOR NOTA FISCAL");
+        availableColumns.add("TRANSPORTADORA");
+
     }
 
     private void initializeComponents() {
@@ -198,6 +201,8 @@ public class ColumnManagerWindow extends JFrame {
             case "ID FORNECEDOR": return "fornecedor_id";
             case "ID PEDIDO": return "order_id";
             case "OBSERVAÇÃO": return "observacao";
+            case "VALOR NOTA FISCAL": return "nfe_valor";
+            case "TRANSPORTADORA": return "nfe_transportadora";
             default: return "";
         }
     }

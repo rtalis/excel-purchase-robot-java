@@ -1,5 +1,6 @@
 package com.rt.robotexcel.demo.excel;
 
+import com.rt.robotexcel.demo.api.ApiClient;
 import com.rt.robotexcel.demo.config.ExcelColumnConfig;
 import com.rt.robotexcel.demo.robot.RobotUtil;
 import com.rt.robotexcel.demo.util.ClipboardManager;
@@ -20,13 +21,20 @@ public class ExcelUpdater {
     private final RobotUtil robot;
     private final SimpleDateFormat inputFormat;
     private final SimpleDateFormat outputFormat;
+    private ApiClient apiClient;
+    private JSONObject nfeDataCache;
 
     public ExcelUpdater() throws Exception {
         this.robot = new RobotUtil();
         this.inputFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH);
         this.outputFormat = new SimpleDateFormat("dd/MM/yyyy");
     }
-        private List<ExcelColumnConfig> columnConfigs;
+    
+    private List<ExcelColumnConfig> columnConfigs;
+    
+    public void setApiClient(ApiClient apiClient) {
+        this.apiClient = apiClient;
+    }
     
     public void setColumnConfigs(List<ExcelColumnConfig> configs) {
         this.columnConfigs = configs;
@@ -122,6 +130,119 @@ public class ExcelUpdater {
                 return String.format("%.2f", purchase.getDouble(config.getJsonField()));
             }
 
+            // Handle NFE-specific fields that require API call
+            if (config.getJsonField().equals("nfe_valor") || config.getJsonField().equals("nfe_transportadora")) {
+                // Fetch NFE data if not already cached
+                if (nfeDataCache == null && apiClient != null) {
+                    String numNf = purchase.optJSONArray("nfes") != null && 
+                                   !purchase.getJSONArray("nfes").isEmpty() 
+                                   ? purchase.getJSONArray("nfes").getJSONObject(0).optString("num_nf", null) 
+                                   : null;
+                    
+                    if (numNf != null && !numNf.isEmpty()) {
+                        String fornecedorId = purchase.optString("cod_for", null);
+                        String fornecedorNome = purchase.optString("fornecedor_descricao", null);
+                        String dtEnt = purchase.optJSONArray("nfes") != null && 
+                                      !purchase.getJSONArray("nfes").isEmpty() 
+                                      ? purchase.getJSONArray("nfes").getJSONObject(0).optString("dt_ent", null) 
+                                      : null;
+                        
+                        // Format dtEnt to YYYY-MM-DD if present
+                        if (dtEnt != null && !dtEnt.isEmpty()) {
+                            try {
+                                Date date = null;
+                                if (dtEnt.contains("T")) {
+                                    date = parseIsoToDate(dtEnt);
+                                } else {
+                                    date = inputFormat.parse(dtEnt);
+                                }
+                                SimpleDateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                dtEnt = apiFormat.format(date);
+                            } catch (Exception e) {
+                                dtEnt = null;
+                            }
+                        }
+                        
+                        String nfeResponse = apiClient.getNfeByNumber(numNf, fornecedorId, fornecedorNome, dtEnt);
+                        if (nfeResponse != null) {
+                            try {
+                                JSONObject resp = new JSONObject(nfeResponse);
+                                // Case A: wrapped response with 'found' flag (from get_nfe_by_number)
+                                if (resp.optBoolean("found", false)) {
+                                    nfeDataCache = resp;
+                                    // If a chave is present, try to fetch full NFE JSON
+                                    String chave = resp.optString("chave", null);
+                                    if (chave != null && !chave.isEmpty()) {
+                                        String searchResponse = apiClient.searchNfeByChave(chave);
+                                        if (searchResponse != null) {
+                                            try {
+                                                JSONObject fullNfe = new JSONObject(searchResponse);
+                                                nfeDataCache.put("full_data", fullNfe);
+                                            } catch (Exception exf) {
+                                                // ignore parse errors for full data
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Case B: endpoint returned full NFE JSON directly (from get_nfe_data)
+                                    // Use resp as the full data
+                                    nfeDataCache = new JSONObject();
+                                    // copy chave/numero/valor_total if present
+                                    if (resp.has("chave")) nfeDataCache.put("chave", resp.optString("chave"));
+                                    if (resp.has("numero")) nfeDataCache.put("numero", resp.optString("numero"));
+                                    if (resp.has("valor_total")) nfeDataCache.put("valor_total", resp.optDouble("valor_total"));
+                                    if (resp.has("valor")) nfeDataCache.put("valor", resp.optDouble("valor"));
+                                    // attach full data for transportadora extraction
+                                    nfeDataCache.put("full_data", resp);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+                
+                // Extract the requested field from cached NFE data
+                if (nfeDataCache != null) {
+                    if (config.getJsonField().equals("nfe_valor")) {
+                        double valor = nfeDataCache.optDouble("valor", nfeDataCache.optDouble("valor_total", 0.0));
+                        return valor > 0 ? String.format("%.2f", valor) : "";
+                    }
+                    
+                    if (config.getJsonField().equals("nfe_transportadora")) {
+                        // Try to get transportadora from full NFE data
+                        if (nfeDataCache.has("full_data")) {
+                            JSONObject fullData = nfeDataCache.getJSONObject("full_data");
+                            // Prefer structured transporte.transportadora.nome
+                            String transportadora = "";
+                            if (fullData.has("transporte")) {
+                                JSONObject transporte = fullData.optJSONObject("transporte");
+                                if (transporte != null && transporte.has("transportadora")) {
+                                    JSONObject t = transporte.optJSONObject("transportadora");
+                                    if (t != null) {
+                                        transportadora = t.optString("nome", "");
+                                        if (transportadora.isEmpty()) {
+                                            transportadora = t.optString("razao_social", "");
+                                        }
+                                    }
+                                }
+                            }
+                            // Fallbacks
+                            if (transportadora.isEmpty()) {
+                                transportadora = fullData.optString("transportadora", "");
+                            }
+                            if (transportadora.isEmpty()) {
+                                transportadora = fullData.optString("transp_nome", "");
+                            }
+                            return transportadora;
+                        }
+                        return "";
+                    }
+                }
+                
+                return "";
+            }
+
             return purchase.optString(config.getJsonField(), "");
         } catch (Exception e) {
             e.printStackTrace();
@@ -175,6 +296,9 @@ public class ExcelUpdater {
 
     public int updatePurchaseOrder(String jsonResponse) {
         try {
+            // Reset NFE cache for each new purchase order
+            nfeDataCache = null;
+            
             JSONObject json = new JSONObject(jsonResponse);
             JSONObject purchase;
             String searchMode = "nfes[0].num_nf";

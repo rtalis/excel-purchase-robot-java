@@ -71,6 +71,9 @@ public class ExcelPurchaseRobot {
 
             ExcelUpdater excelUpdater = new ExcelUpdater();
 
+            // Set API client for NFE data fetching
+            excelUpdater.setApiClient(api);
+
             // Carrega a configuração salva no ExcelUpdater
             List<ExcelColumnConfig> savedConfigs = ConfigurationManager.loadConfiguration();
             if (savedConfigs != null) {

@@ -92,6 +92,56 @@ public class ApiClient {
         }
     }
 
+    public String getNfeByNumber(String numNf, String fornecedorId, String fornecedorNome, String dtEnt) {
+        try {
+            StringBuilder url = new StringBuilder(String.format("%s/api/get_nfe_by_number?num_nf=%s", baseUrl, numNf));
+            
+            if (fornecedorId != null && !fornecedorId.trim().isEmpty()) {
+                url.append("&fornecedor_id=").append(fornecedorId.trim());
+            }
+            if (fornecedorNome != null && !fornecedorNome.trim().isEmpty()) {
+                url.append("&fornecedor_nome=").append(fornecedorNome.trim().replace(" ", "%20"));
+            }
+        
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url.toString()))
+                .header("Cookie", sessionCookie)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return response.body();
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public String searchNfeByChave(String chave) {
+        try {
+            String url = String.format("%s/api/get_nfe_data?xmlKey=%s", baseUrl, chave);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Cookie", sessionCookie)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return response.body();
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public boolean testConnection() {
         try {            
             HttpRequest request = HttpRequest.newBuilder()

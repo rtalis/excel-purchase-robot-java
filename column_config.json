@@ -25,13 +25,13 @@
     "position": 3
   },
   {
-    "jsonField": "",
-    "displayName": "[COLUNA EM BRANCO]",
+    "jsonField": "nfe_valor",
+    "displayName": "VALOR NOTA FISCAL",
     "position": 4
   },
   {
-    "jsonField": "",
-    "displayName": "[COLUNA EM BRANCO]",
+    "jsonField": "nfe_transportadora",
+    "displayName": "TRANSPORTADORA",
     "position": 5
   },
   {
