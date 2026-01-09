@@ -1,7 +1,7 @@
 [
   {
-    "jsonField": "observacao (extrair número)",
-    "displayName": "SOLIC.",
+    "jsonField": "cod_emp1_source",
+    "displayName": "Cod. Empresa",
     "position": -1
   },
   {
@@ -15,33 +15,33 @@
     "position": 1
   },
   {
-    "jsonField": "dt_emis",
-    "displayName": "DT. PED.",
-    "position": 2
-  },
-  {
     "jsonField": "adjusted_total",
     "displayName": "VALOR TOTAL COM DESC.",
-    "position": 3
+    "position": 2
   },
   {
     "jsonField": "nfes[0].num_nf",
     "displayName": "NF",
+    "position": 3
+  },
+  {
+    "jsonField": "",
+    "displayName": "[COLUNA EM BRANCO]",
     "position": 4
   },
   {
-    "jsonField": "nfes[0].dt_ent",
-    "displayName": "CHEGADA",
+    "jsonField": "",
+    "displayName": "[COLUNA EM BRANCO]",
     "position": 5
+  },
+  {
+    "jsonField": "dt_emis",
+    "displayName": "DT. PED.",
+    "position": 6
   },
   {
     "jsonField": "genero (extrair do final da observação)",
     "displayName": "GENERO",
-    "position": 6
-  },
-  {
-    "jsonField": "observacao",
-    "displayName": "OBSERVAÇÃO",
     "position": 7
   }
 ]

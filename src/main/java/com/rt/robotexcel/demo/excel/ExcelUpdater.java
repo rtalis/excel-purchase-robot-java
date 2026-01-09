@@ -5,6 +5,11 @@ import com.rt.robotexcel.demo.robot.RobotUtil;
 import com.rt.robotexcel.demo.util.ClipboardManager;
 
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -29,8 +34,13 @@ public class ExcelUpdater {
     private String extractValueFromJson(JSONObject purchase, ExcelColumnConfig config) {
         try {
             if (config.getJsonField().isEmpty()) return ""; // coluna em branco
-        
-        // Tratamentos especiais para alguns campos
+
+            // Tratamentos especiais para alguns campos
+            if (config.getJsonField().equals("cod_emp1_source")) {
+                // This is the cod_emp1 source column - leave it as is, don't overwrite
+                return "SKIP";
+            }
+
             if (config.getDisplayName().equals("GENERO")) {
                 String observacao = purchase.optString("observacao", "");
                 if (!observacao.isEmpty()) {
@@ -38,7 +48,7 @@ public class ExcelUpdater {
                     return parts.length > 0 ? parts[parts.length - 1].trim() : "";
                 }
                 return "";
-        }
+            }
             if (config.getDisplayName().equals("OBSERVAÇÃO")) {
                 String observacao = purchase.optString("observacao", " ");
                 if (!observacao.isEmpty()) {
@@ -47,30 +57,64 @@ public class ExcelUpdater {
                 }
                 return "";
             }
-            
+
             if (config.getDisplayName().equals("SOLIC.")) {
                 return extractSolicitacao(purchase.optString("observacao", ""));
             }
-            
+
             if (config.getJsonField().contains("nfes[0]")) {
                 if (!purchase.has("nfes") || purchase.getJSONArray("nfes").isEmpty()) {
                     return "";
                 }
                 JSONObject nfObj = purchase.getJSONArray("nfes").getJSONObject(0);
                 String field = config.getJsonField().replace("nfes[0].", "");
-                
+
                 if (field.equals("dt_ent")) {
-                    Date dtEnt = inputFormat.parse(nfObj.getString(field));
+                    String dateStr = nfObj.getString(field);
+                    Date dtEnt = null;
+                    try {
+                        dtEnt = inputFormat.parse(dateStr);
+                    } catch (java.text.ParseException e) {
+                        // Try ISO 8601 fallback
+                        try {
+                            if (dateStr.contains("T")) {
+                                // Handles both with and without time
+                                dtEnt = parseIsoToDate(dateStr);
+                            } else {
+                                // Fallback: yyyy-MM-dd
+                                dtEnt = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
+                            }
+                        } catch (Exception ex2) {
+                            ex2.printStackTrace();
+                            return "";
+                        }
+                    }
                     return outputFormat.format(dtEnt);
                 }
                 return nfObj.optString(field, "");
             }
-            
+
             if (config.getJsonField().equals("dt_emis")) {
-                Date dt = inputFormat.parse(purchase.getString(config.getJsonField()));
+                String dateStr = purchase.getString(config.getJsonField());
+                Date dt = null;
+                try {
+                    dt = inputFormat.parse(dateStr);
+                } catch (java.text.ParseException e) {
+                    // Try ISO 8601 fallback
+                    try {
+                        if (dateStr.contains("T")) {
+                            dt = parseIsoToDate(dateStr);
+                        } else {
+                            dt = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
+                        }
+                    } catch (Exception ex2) {
+                        ex2.printStackTrace();
+                        return "";
+                    }
+                }
                 return outputFormat.format(dt);
             }
-            
+
             if (config.getJsonField().equals("adjusted_total")) {
                 return String.format("%.2f", purchase.getDouble(config.getJsonField()));
             }
@@ -78,8 +122,6 @@ public class ExcelUpdater {
                 return String.format("%.2f", purchase.getDouble(config.getJsonField()));
             }
 
-
-            
             return purchase.optString(config.getJsonField(), "");
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,6 +154,24 @@ public class ExcelUpdater {
     }
 
     
+
+    private Date parseIsoToDate(String dateStr) throws Exception {
+        if (dateStr == null || dateStr.isEmpty()) return null;
+        try {
+            // Try full offset-aware parser first
+            return Date.from(OffsetDateTime.parse(dateStr).toInstant());
+        } catch (DateTimeParseException ex1) {
+            try {
+                // Try local date-time without offset (assume UTC)
+                LocalDateTime ldt = LocalDateTime.parse(dateStr);
+                return Date.from(ldt.atZone(ZoneOffset.UTC).toInstant());
+            } catch (DateTimeParseException ex2) {
+                // Fallback to Instant parsing (handles Z or offsets differently)
+                return Date.from(Instant.parse(dateStr));
+            }
+        }
+    }
+
 
     public int updatePurchaseOrder(String jsonResponse) {
         try {
@@ -161,7 +221,7 @@ public class ExcelUpdater {
                 }
                 
                 String value = extractValueFromJson(purchase, config);
-                if (!value.isEmpty()) {
+                if (!value.isEmpty() && !value.equals("SKIP")) {
                     ClipboardManager.setContent(value);
                     robot.pasteFromClipboard();
                 }

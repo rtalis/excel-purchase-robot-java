@@ -88,45 +88,97 @@ public class ExcelPurchaseRobot {
                 return;
             }
 
+            // Find position of cod_emp1_source and cod_pedc columns
+            int codPedcPosition = -1;
+            int codEmp1Position = -1;
+            
+            for (ExcelColumnConfig config : savedConfigs) {
+                if (config.getJsonField().equals("cod_pedc")) {
+                    codPedcPosition = config.getPosition();
+                } else if (config.getJsonField().equals("cod_emp1_source")) {
+                    codEmp1Position = config.getPosition();
+                }
+            }
+            
             // Aguarda posicionar o cursor na primeira célula
             String searchType = searchByNF ? "nota fiscal" : "pedido";
             System.out.println("Posicione o cursor na coluna do " + searchType + "...");
             Thread.sleep(1000);
             RobotUtil robot = new RobotUtil();
             while (true) {
+                // Read cod_pedc from current cell
                 ClipboardManager.clear();
                 robot.enterCell();
                 robot.selectAll();
                 robot.copyToClipboard();
 
-                String numero = ClipboardManager.getContent();
-                System.out.println(searchType + " copiado: " + numero);
+                String codPedc = ClipboardManager.getContent();
+                System.out.println(searchType + " copiado: " + codPedc);
                 
-                if (numero != null && numero.trim().matches("\\d+")) {
-                    String numeroTrimmed = numero.trim();
+                if (codPedc != null && codPedc.trim().matches("\\d+")) {
+                    String codPedcTrimmed = codPedc.trim();
+                    String codEmp1 = null;
+                    
+                    // If searching by pedido, read cod_emp1 from configured column
+                    if (!searchByNF && codEmp1Position != 0 && codPedcPosition != -1) {
+                        robot.pressEsc();
+                        
+                        // Navigate to cod_emp1 column
+                        int moves = codPedcPosition - codEmp1Position;
+                        if (moves > 0) {
+                            for (int i = 0; i < moves; i++) {
+                                robot.pressLeftArrow();
+                            }
+                        } else if (moves < 0) {
+                            for (int i = 0; i < Math.abs(moves); i++) {
+                                robot.pressRightArrow();
+                            }
+                        }
+                        
+                        // Read cod_emp1
+                        ClipboardManager.clear();
+                        robot.enterCell();
+                        robot.selectAll();
+                        robot.copyToClipboard();
+                        codEmp1 = ClipboardManager.getContent();
+                        System.out.println("cod_emp1 copiado: " + codEmp1);
+                        
+                        // Move back to cod_pedc column
+                        robot.pressEsc();
+                        if (moves > 0) {
+                            for (int i = 0; i < moves; i++) {
+                                robot.pressRightArrow();
+                            }
+                        } else if (moves < 0) {
+                            for (int i = 0; i < Math.abs(moves); i++) {
+                                robot.pressLeftArrow();
+                            }
+                        }
+                    }
+                    
                     String response;
                     
                     // Decide qual API usar com base na opção de busca
                     if (searchByNF) {
-                        response = api.searchPurchaseByInvoice(numeroTrimmed);
+                        response = api.searchPurchaseByInvoice(codPedcTrimmed);
                     } else {
-                        response = api.searchPurchaseOrder(numeroTrimmed);
+                        response = api.searchPurchaseOrder(codEmp1, codPedcTrimmed);
                     }
                     
                     if (response != null) {
                         int success = excelUpdater.updatePurchaseOrder(response);
                         if (success == 0) {
-                            System.out.println(searchType + " " + numeroTrimmed + " atualizado com sucesso.");
+                            System.out.println(searchType + " " + codPedcTrimmed + " atualizado com sucesso.");
                        
                         } else if (success == 1) {
-                            System.out.println("Nenhum " + searchType + " encontrado para o número: " + numeroTrimmed);
+                            System.out.println("Nenhum " + searchType + " encontrado para o número: " + codPedcTrimmed);
                         }   else {
-                            System.out.println("Falha ao atualizar o " + searchType + " " + numeroTrimmed + ".");
+                            System.out.println("Falha ao atualizar o " + searchType + " " + codPedcTrimmed + ".");
                             break;
                         }
                     } 
                 } else {
-                    System.out.println("Número do " + searchType + " inválido: " + numero);
+                    System.out.println("Número do " + searchType + " inválido: " + codPedc);
                     break;
                 }
             }

@@ -48,10 +48,16 @@ public class ApiClient {
         }
     }
 
-    public String searchPurchaseOrder(String pedido) {
+    public String searchPurchaseOrder(String codEmp1, String codPedc) {
         try {
-            String url = String.format("%s/api/search_combined?query=%s&page=1&per_page=200&score_cutoff=100&searchByCodPedc=true&searchByFornecedor=false&searchByObservacao=true&searchByItemId=false&searchByDescricao=false&selectedFuncName=todos", 
-                baseUrl, pedido);
+            // Build query with both cod_emp1 and cod_pedc
+            String query = codPedc;
+            if (codEmp1 != null && !codEmp1.trim().isEmpty()) {
+                query = codPedc.trim();
+            }
+
+            String url = String.format("%s/api/search_advanced?query=%s&page=1&per_page=200&score_cutoff=100&fields=cod_pedc&selectedFuncName=todos&selectedCodEmp1=%s&ignoreDiacritics=true&exactSearch=true&hideCancelled=false", 
+                baseUrl, query, codEmp1 != null && !codEmp1.trim().isEmpty() ? codEmp1.trim() : "todos");
             
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -69,6 +75,7 @@ public class ApiClient {
 
     public String searchPurchaseByInvoice(String numeroNF) {
         try {
+
             String url = String.format("%s/api/purchase_by_nf?num_nf=%s", baseUrl, numeroNF);
             
             HttpRequest request = HttpRequest.newBuilder()

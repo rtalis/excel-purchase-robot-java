@@ -51,6 +51,7 @@ public class ColumnManagerWindow extends JFrame {
     private void initializeAvailableColumns() {
         availableColumns.add("SOLIC.");
         availableColumns.add("PEDIDO");
+        availableColumns.add("Cod. Empresa");
         availableColumns.add("FORNECEDOR");
         availableColumns.add("DT. PED.");
         availableColumns.add("VALOR ITENS");
@@ -178,6 +179,7 @@ public class ColumnManagerWindow extends JFrame {
     private String getJsonFieldForColumn(String column) {
         switch (column) {
             case "PEDIDO": return "cod_pedc";
+            case "Cod. Empresa": return "cod_emp1_source";
             case "FORNECEDOR": return "fornecedor_descricao";
             case "DT. PED.": return "dt_emis";
             case "VALOR ITENS": return "total_bruto";
