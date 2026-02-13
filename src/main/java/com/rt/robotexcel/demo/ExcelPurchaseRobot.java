@@ -85,9 +85,9 @@ public class ExcelPurchaseRobot {
                 return;
             }
 
-            // Login
-            if (!api.login(dotenv.get("EMAIL"), dotenv.get("PASSWORD"))) {
-                System.out.println("Falha no login!");
+            // Authenticate with token
+            if (!api.authenticateWithToken(dotenv.get("TOKEN"))) {
+                System.out.println("Falha na autenticação!");
                 return;
             }
 

@@ -21,8 +21,7 @@ public class InitialScreen extends JFrame {
     private JLabel countdownLabel;
     private Timer countdownTimer;
     private int secondsRemaining = 8;
-    private JTextField emailField;
-    private JPasswordField passwordField;
+    private JTextField tokenField;
     private JTextField baseUrlField;
     private boolean isRunning = false;
     private JRadioButton searchByPedidoRadio;
@@ -134,17 +133,11 @@ public class InitialScreen extends JFrame {
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, getMaximumSize().height/2));
         panel.setBorder(BorderFactory.createTitledBorder("Configuração API"));
         
-        // Email
-        JPanel emailPanel = new JPanel(new BorderLayout());
-        emailPanel.add(new JLabel("Email:"), BorderLayout.NORTH);
-        emailField = new JTextField(20);
-        emailPanel.add(emailField, BorderLayout.CENTER);
-        
-        // Password
-        JPanel passwordPanel = new JPanel(new BorderLayout());
-        passwordPanel.add(new JLabel("Senha:"), BorderLayout.NORTH);
-        passwordField = new JPasswordField(20);
-        passwordPanel.add(passwordField, BorderLayout.CENTER);
+        // Token
+        JPanel tokenPanel = new JPanel(new BorderLayout());
+        tokenPanel.add(new JLabel("Token de Acesso:"), BorderLayout.NORTH);
+        tokenField = new JTextField(20);
+        tokenPanel.add(tokenField, BorderLayout.CENTER);
         
         // Base URL
         JPanel urlPanel = new JPanel(new BorderLayout());
@@ -160,10 +153,10 @@ public class InitialScreen extends JFrame {
                 
                 Dotenv dotenv = Dotenv.load();
                 ApiClient api = new ApiClient(dotenv.get("BASE_URL"));
-                if (!api.login(dotenv.get("EMAIL"), dotenv.get("PASSWORD"))) {
-                    System.out.println("Falha no login!");
+                if (!api.authenticateWithToken(dotenv.get("TOKEN"))) {
+                    System.out.println("Falha na autenticação!");
                     JOptionPane.showMessageDialog(this, 
-                        "Falha no login! Verifique suas credenciais.", 
+                        "Falha na autenticação! Verifique seu token.", 
                         "Erro", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
@@ -186,11 +179,9 @@ public class InitialScreen extends JFrame {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
         // Adiciona componentes ao painel
-        panel.add(emailPanel);
+        panel.add(tokenPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        panel.add(passwordPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        panel.add(urlPanel);      
+        panel.add(urlPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
         buttonPanel.add(testConnection);
         buttonPanel.add(saveButton);
@@ -230,8 +221,7 @@ public class InitialScreen extends JFrame {
         try {
             if (Files.exists(Paths.get(".env"))) {
                 Dotenv dotenv = Dotenv.load();
-                emailField.setText(dotenv.get("EMAIL"));
-                passwordField.setText(dotenv.get("PASSWORD"));
+                tokenField.setText(dotenv.get("TOKEN"));
                 baseUrlField.setText(dotenv.get("BASE_URL"));
             }
         } catch (Exception e) {
@@ -244,8 +234,7 @@ public class InitialScreen extends JFrame {
     private void saveEnvValues() {
         try {
             StringBuilder envContent = new StringBuilder();
-            envContent.append("EMAIL=").append(emailField.getText()).append("\n");
-            envContent.append("PASSWORD=").append(new String(passwordField.getPassword())).append("\n");
+            envContent.append("TOKEN=").append(tokenField.getText()).append("\n");
             envContent.append("BASE_URL=").append(baseUrlField.getText()).append("\n");
             
             Files.write(Paths.get(".env"), envContent.toString().getBytes());

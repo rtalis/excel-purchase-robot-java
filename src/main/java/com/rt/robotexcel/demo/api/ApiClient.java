@@ -9,6 +9,7 @@ import java.time.Duration;
 public class ApiClient {
     private final HttpClient client;
     private String sessionCookie;
+    private String authToken;
     private final String baseUrl;
 
     public ApiClient(String baseUrl) {
@@ -18,6 +19,31 @@ public class ApiClient {
             .build();
     }
 
+    public boolean authenticateWithToken(String token) {
+        try {
+            this.authToken = token;
+            // Test the token by making a request to a protected endpoint
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/auth/protected"))
+                .header("Authorization", "Bearer " + token)
+                .GET()
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                System.out.println("Token authentication successful!");
+                return true;
+            } else {
+                System.out.println("Token authentication failed: " + response.statusCode());
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Deprecated
     public boolean login(String email, String password) {
         try {
             String jsonBody = String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
@@ -59,11 +85,17 @@ public class ApiClient {
             String url = String.format("%s/api/search_advanced?query=%s&page=1&per_page=200&score_cutoff=100&fields=cod_pedc&selectedFuncName=todos&selectedCodEmp1=%s&ignoreDiacritics=true&exactSearch=true&hideCancelled=false", 
                 baseUrl, query, codEmp1 != null && !codEmp1.trim().isEmpty() ? codEmp1.trim() : "todos");
             
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Cookie", sessionCookie)
-                .GET()
-                .build();
+                .GET();
+            
+            if (authToken != null) {
+                requestBuilder.header("Authorization", "Bearer " + authToken);
+            } else if (sessionCookie != null) {
+                requestBuilder.header("Cookie", sessionCookie);
+            }
+            
+            HttpRequest request = requestBuilder.build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return response.body();
@@ -78,11 +110,17 @@ public class ApiClient {
 
             String url = String.format("%s/api/purchase_by_nf?num_nf=%s", baseUrl, numeroNF);
             
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Cookie", sessionCookie)
-                .GET()
-                .build();
+                .GET();
+            
+            if (authToken != null) {
+                requestBuilder.header("Authorization", "Bearer " + authToken);
+            } else if (sessionCookie != null) {
+                requestBuilder.header("Cookie", sessionCookie);
+            }
+            
+            HttpRequest request = requestBuilder.build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return response.body();
@@ -104,11 +142,17 @@ public class ApiClient {
             }
         
             
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url.toString()))
-                .header("Cookie", sessionCookie)
-                .GET()
-                .build();
+                .GET();
+            
+            if (authToken != null) {
+                requestBuilder.header("Authorization", "Bearer " + authToken);
+            } else if (sessionCookie != null) {
+                requestBuilder.header("Cookie", sessionCookie);
+            }
+            
+            HttpRequest request = requestBuilder.build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
@@ -125,11 +169,17 @@ public class ApiClient {
         try {
             String url = String.format("%s/api/get_nfe_data?xmlKey=%s", baseUrl, chave);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Cookie", sessionCookie)
-                .GET()
-                .build();
+                .GET();
+            
+            if (authToken != null) {
+                requestBuilder.header("Authorization", "Bearer " + authToken);
+            } else if (sessionCookie != null) {
+                requestBuilder.header("Cookie", sessionCookie);
+            }
+            
+            HttpRequest request = requestBuilder.build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
