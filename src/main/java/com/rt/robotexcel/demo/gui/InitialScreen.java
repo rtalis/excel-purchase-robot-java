@@ -11,6 +11,8 @@ import java.nio.file.Paths;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.rt.robotexcel.demo.ExcelPurchaseRobot;
+import com.rt.robotexcel.demo.api.ApiClient;
+import io.github.cdimascio.dotenv.Dotenv;
  
 
 public class InitialScreen extends JFrame {
@@ -139,8 +141,6 @@ public class InitialScreen extends JFrame {
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         
-        JButton configColumnButton = new JButton("Configurar Colunas");
-        configColumnButton.addActionListener(e -> openColumnManager());
         
         JButton startButton = new JButton("Iniciar Robô");
         startButton.setFont(new Font(startButton.getFont().getName(), Font.BOLD, startButton.getFont().getSize()));
@@ -151,7 +151,6 @@ public class InitialScreen extends JFrame {
         countdownLabel.setFont(new Font("Arial", Font.BOLD, 16));
         countdownLabel.setHorizontalAlignment(JLabel.CENTER);
         
-        buttonPanel.add(configColumnButton);
         buttonPanel.add(startButton);
         
         panel.add(buttonPanel, BorderLayout.CENTER);
@@ -167,8 +166,37 @@ public class InitialScreen extends JFrame {
         columnManager.setVisible(true);
     }
     
+    private boolean areCredentialsSet() {
+        try {
+            if (!Files.exists(Paths.get(".env"))) {
+                return false;
+            }
+            
+            Dotenv dotenv = Dotenv.load();
+            String token = dotenv.get("TOKEN");
+            String baseUrl = dotenv.get("BASE_URL");
+            
+            return token != null && !token.trim().isEmpty() && 
+                   baseUrl != null && !baseUrl.trim().isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
     private void startCountdown() {
         if (isRunning) return;
+        
+        // Check if credentials are set
+        if (!areCredentialsSet()) {
+            JOptionPane.showMessageDialog(InitialScreen.this, 
+                "Configure e salve os dados de acesso (Token e URL)!", 
+                "Configuração Necessária", JOptionPane.WARNING_MESSAGE);
+            
+            // Open ConfigWindow
+            ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
+            cfg.setVisible(true);
+            return;
+        }
         
         isRunning = true;
         
@@ -186,20 +214,45 @@ public class InitialScreen extends JFrame {
                     countdownLabel.setText("Clique no n° do " + searchType + ", Iniciando em " + secondsRemaining + "...");
                 } else {
                     countdownTimer.stop();
-                    countdownLabel.setText("Robô em execução!");
+                    countdownLabel.setText("Testando conexão...");
                     
                     new Thread(() -> {
                         try {
-                            if (!Files.exists(Paths.get(".env"))) {
+                            Dotenv dotenv = Dotenv.load();
+                            String token = dotenv.get("TOKEN");
+                            String baseUrl = dotenv.get("BASE_URL");
+                            
+                            // Test connection
+                            ApiClient api = new ApiClient(baseUrl);
+                            boolean authenticated = api.authenticateWithToken(token);
+                            
+                            if (!authenticated) {
                                 SwingUtilities.invokeLater(() -> {
                                     JOptionPane.showMessageDialog(InitialScreen.this, 
-                                        "Configure e salve os dados de acesso primeiro!", 
-                                        "Configuração Necessária", JOptionPane.WARNING_MESSAGE);
+                                        "Erro de autenticação!\nVerifique se o token está válido.", 
+                                        "Falha na Autenticação", JOptionPane.ERROR_MESSAGE);
                                     isRunning = false;
                                     countdownLabel.setText("Aguardando...");
                                 });
                                 return;
                             }
+                            
+                            boolean connected = api.testConnection();
+                            
+                            if (!connected) {
+                                SwingUtilities.invokeLater(() -> {
+                                    JOptionPane.showMessageDialog(InitialScreen.this, 
+                                        "Erro ao conectar à API!\nVerifique se a URL está correta e se o servidor está disponível.", 
+                                        "Falha na Conexão", JOptionPane.ERROR_MESSAGE);
+                                    isRunning = false;
+                                    countdownLabel.setText("Aguardando...");
+                                });
+                                return;
+                            }
+                            
+                            SwingUtilities.invokeLater(() -> {
+                                countdownLabel.setText("Robô em execução!");
+                            });
                             
                             String[] args;
                             if (searchByNfRadio.isSelected()) {
@@ -217,7 +270,7 @@ public class InitialScreen extends JFrame {
                         } catch (Exception ex) {
                             SwingUtilities.invokeLater(() -> {
                                 JOptionPane.showMessageDialog(InitialScreen.this, 
-                                    "Erro ao executar o robô: " + ex.getMessage(), 
+                                    "Erro: " + ex.getMessage(), 
                                     "Erro", JOptionPane.ERROR_MESSAGE);
                                 isRunning = false;
                                 countdownLabel.setText("Erro!");
