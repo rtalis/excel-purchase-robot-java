@@ -6,23 +6,18 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.rt.robotexcel.demo.ExcelPurchaseRobot;
-import com.rt.robotexcel.demo.api.ApiClient;
-
-import io.github.cdimascio.dotenv.Dotenv;
+ 
 
 public class InitialScreen extends JFrame {
     
     private JLabel countdownLabel;
     private Timer countdownTimer;
     private int secondsRemaining = 8;
-    private JTextField tokenField;
-    private JTextField baseUrlField;
     private boolean isRunning = false;
     private JRadioButton searchByPedidoRadio;
     private JRadioButton searchByNfRadio;
@@ -47,7 +42,6 @@ public class InitialScreen extends JFrame {
         setLocationRelativeTo(null);
         
         initializeComponents();
-        loadEnvValues();
     }
     
     private void initializeComponents() {
@@ -56,14 +50,12 @@ public class InitialScreen extends JFrame {
         
         JPanel headerPanel = createHeaderPanel();
         JPanel instructionsPanel = createInstructionsPanel();
-        JPanel configPanel = createConfigPanel();
         JPanel searchOptionsPanel = createSearchOptionsPanel();
         JPanel controlPanel = createControlPanel();
         
         // Adiciona os painéis ao layout principal
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(instructionsPanel, BorderLayout.CENTER);
-        mainPanel.add(configPanel, BorderLayout.EAST);
         mainPanel.add(searchOptionsPanel, BorderLayout.WEST);
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
         
@@ -80,6 +72,19 @@ public class InitialScreen extends JFrame {
         titleLabel.setHorizontalAlignment(JLabel.CENTER);
         
         headerPanel.add(titleLabel, BorderLayout.CENTER);
+            // Gear/settings button on the right
+            JButton gearButton = new JButton("⚙️");
+            gearButton.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+            gearButton.setForeground(Color.WHITE);
+            gearButton.setBackground(new Color(66, 133, 244));
+            gearButton.setFocusPainted(false);
+            gearButton.setBorderPainted(false);
+            gearButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            gearButton.addActionListener(e -> {
+                ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
+                cfg.setVisible(true);
+            });
+            headerPanel.add(gearButton, BorderLayout.EAST);
         return headerPanel;
     }
     
@@ -127,69 +132,7 @@ public class InitialScreen extends JFrame {
         return panel;
     }
     
-    private JPanel createConfigPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, getMaximumSize().height/2));
-        panel.setBorder(BorderFactory.createTitledBorder("Configuração API"));
-        
-        // Token
-        JPanel tokenPanel = new JPanel(new BorderLayout());
-        tokenPanel.add(new JLabel("Token de Acesso:"), BorderLayout.NORTH);
-        tokenField = new JTextField(20);
-        tokenPanel.add(tokenField, BorderLayout.CENTER);
-        
-        // Base URL
-        JPanel urlPanel = new JPanel(new BorderLayout());
-        urlPanel.add(new JLabel("URL Base:"), BorderLayout.NORTH);
-        baseUrlField = new JTextField(20);
-        urlPanel.add(baseUrlField, BorderLayout.CENTER);
-        
-        // Salvar configuração
-        JButton saveButton = new JButton("Salvar Configuração");
-        JButton testConnection = new JButton("Testar Conexão");
-        testConnection.addActionListener(e -> {
-            try {
-                
-                Dotenv dotenv = Dotenv.load();
-                ApiClient api = new ApiClient(dotenv.get("BASE_URL"));
-                if (!api.authenticateWithToken(dotenv.get("TOKEN"))) {
-                    System.out.println("Falha na autenticação!");
-                    JOptionPane.showMessageDialog(this, 
-                        "Falha na autenticação! Verifique seu token.", 
-                        "Erro", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                if (api.testConnection()) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Conexão bem-sucedida!", 
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, 
-                        "Falha na conexão!", 
-                        "Erro", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Erro ao testar conexão: " + ex.getMessage(), 
-                    "Erro", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        saveButton.addActionListener(e -> saveEnvValues());
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-
-        // Adiciona componentes ao painel
-        panel.add(tokenPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        panel.add(urlPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        buttonPanel.add(testConnection);
-        buttonPanel.add(saveButton);
-        panel.add(buttonPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
-        
-        return panel;
-    }
+    
     
     private JPanel createControlPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -217,37 +160,7 @@ public class InitialScreen extends JFrame {
         return panel;
     }
     
-    private void loadEnvValues() {
-        try {
-            if (Files.exists(Paths.get(".env"))) {
-                Dotenv dotenv = Dotenv.load();
-                tokenField.setText(dotenv.get("TOKEN"));
-                baseUrlField.setText(dotenv.get("BASE_URL"));
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Erro ao carregar configurações: " + e.getMessage(), 
-                "Erro", JOptionPane.ERROR_MESSAGE);
-        }
-    }
     
-    private void saveEnvValues() {
-        try {
-            StringBuilder envContent = new StringBuilder();
-            envContent.append("TOKEN=").append(tokenField.getText()).append("\n");
-            envContent.append("BASE_URL=").append(baseUrlField.getText()).append("\n");
-            
-            Files.write(Paths.get(".env"), envContent.toString().getBytes());
-            
-            JOptionPane.showMessageDialog(this, 
-                "Configurações salvas com sucesso!", 
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Erro ao salvar configurações: " + e.getMessage(), 
-                "Erro", JOptionPane.ERROR_MESSAGE);
-        }
-    }
     
     private void openColumnManager() {
         ColumnManagerWindow columnManager = new ColumnManagerWindow();

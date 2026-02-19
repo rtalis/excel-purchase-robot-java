@@ -22,6 +22,7 @@ public class ColumnManagerWindow extends JFrame {
 
         ColumnManagerWindow window = new ColumnManagerWindow();
         window.setVisible(true);
+        window.setLocationRelativeTo(null);
     }
     
     private DefaultTableModel tableModel;
