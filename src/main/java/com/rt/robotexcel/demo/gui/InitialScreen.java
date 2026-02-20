@@ -74,7 +74,7 @@ public class InitialScreen extends JFrame {
 
         headerPanel.add(titleLabel, BorderLayout.CENTER);
         // Gear/settings button on the right
-        JButton gearButton = new JButton("⚙️");
+        JButton gearButton = new JButton("Config. ⚙️");
         gearButton.setFont(new Font("Segoe UI", Font.PLAIN, 18));
         gearButton.setForeground(Color.WHITE);
         gearButton.setBackground(new Color(66, 133, 244));
@@ -152,11 +152,6 @@ public class InitialScreen extends JFrame {
         panel.add(countdownLabel, BorderLayout.SOUTH);
 
         return panel;
-    }
-
-    private void openColumnManager() {
-        ColumnManagerWindow columnManager = new ColumnManagerWindow();
-        columnManager.setVisible(true);
     }
 
     private boolean areCredentialsSet() {

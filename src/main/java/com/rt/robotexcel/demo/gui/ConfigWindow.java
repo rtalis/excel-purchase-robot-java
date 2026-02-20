@@ -35,27 +35,36 @@ public class ConfigWindow extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(8, 8, 8, 8);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.25;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.25;
         JLabel tokenLabel = new JLabel("Chave (TOKEN):");
         tokenLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         content.add(tokenLabel, gbc);
 
-        gbc.gridx = 1; gbc.weightx = 0.75;
+        gbc.gridx = 1;
+        gbc.weightx = 0.75;
         tokenField = new JPasswordField();
         tokenField.setPreferredSize(new Dimension(320, 30));
         content.add(tokenField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.25;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.25;
         JLabel urlLabel = new JLabel("Site (BASE_URL):");
         urlLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         content.add(urlLabel, gbc);
 
-        gbc.gridx = 1; gbc.weightx = 0.75;
+        gbc.gridx = 1;
+        gbc.weightx = 0.75;
         baseUrlField = new JTextField();
         baseUrlField.setPreferredSize(new Dimension(320, 30));
         content.add(baseUrlField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2; gbc.weightx = 1.0;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
         statusLabel = new JLabel("");
         statusLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         statusLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -79,7 +88,8 @@ public class ConfigWindow extends JDialog {
         buttons.add(colsBtn);
         buttons.add(closeBtn);
 
-        gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
         content.add(buttons, gbc);
 
         setContentPane(content);
@@ -90,9 +100,11 @@ public class ConfigWindow extends JDialog {
             if (Files.exists(Paths.get(".env"))) {
                 Dotenv dotenv = Dotenv.load();
                 String t = dotenv.get("TOKEN");
-                if (t != null) tokenField.setText(t);
+                if (t != null)
+                    tokenField.setText(t);
                 String b = dotenv.get("BASE_URL");
-                if (b != null) baseUrlField.setText(b);
+                if (b != null)
+                    baseUrlField.setText(b);
             }
         } catch (Exception e) {
             statusLabel.setText("Erro ao carregar: " + e.getMessage());
@@ -103,7 +115,12 @@ public class ConfigWindow extends JDialog {
         try {
             StringBuilder env = new StringBuilder();
             env.append("TOKEN=").append(new String(tokenField.getPassword())).append("\n");
-            env.append("BASE_URL=").append(baseUrlField.getText()).append("\n");
+            String baseUrl = baseUrlField.getText().trim();
+            if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
+                env.append("BASE_URL=").append(baseUrl).append("\n");
+            } else {
+                throw new IllegalArgumentException("BASE_URL deve começar com http:// ou https://");
+            }
             Files.write(Paths.get(".env"), env.toString().getBytes());
             statusLabel.setText("✅ Salvo");
             statusLabel.setForeground(new Color(40, 167, 69));

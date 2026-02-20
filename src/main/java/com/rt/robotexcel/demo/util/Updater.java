@@ -67,7 +67,7 @@ public class Updater {
                     "timeout /t 2 /nobreak > nul\r\n" +
                     "move /y \"" + updateJar.getAbsolutePath() + "\" \"" + currentJar.getAbsolutePath() + "\"\r\n" +
                     "start \"\" javaw -jar \"" + currentJar.getAbsolutePath() + "\"\r\n" +
-
+                    "timeout /t 3 /nobreak > nul\r\n" +
                     "del \"" + batchFile.getAbsolutePath() + "\"\r\n" +
                     "del \"" + script.getAbsolutePath() + "\"";
 

@@ -23,8 +23,7 @@ A Java application to automate filling purchase order data into Excel spreadshee
 3.  **Create `.env` file:**
     Create a `.env` file in the project root with the following variables, pointing to your API and credentials:
     ```env
-    EMAIL=your-api-email@example.com
-    PASSWORD=your-api-password
+    Token=Your API acess token
     BASE_URL=http://localhost:5000 # Or your actual API base URL
     ```
 
@@ -51,6 +50,7 @@ A Java application to automate filling purchase order data into Excel spreadshee
     - The application will prompt: "Posicione o cursor na coluna do pedido e aguarde 5 segundos..." (Position the cursor on the order column and wait 5 seconds...).
     - After 5 seconds, the robot will:
         - Read the purchase order number from the current cell.
+        - Read the company number from the column to the left side of the purchase/NF number.
         - Fetch data from the API for that order.
         - Fill the corresponding row in Excel based on your saved column configuration.
         - Automatically move to the cell below to process the next order.
