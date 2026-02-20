@@ -13,7 +13,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 public class ConfigWindow extends JDialog {
-    private JPasswordField tokenField;
+    private JTextField tokenField;
     private JTextField baseUrlField;
     private JLabel statusLabel;
 
@@ -22,7 +22,7 @@ public class ConfigWindow extends JDialog {
         initUI();
         loadValues();
         setResizable(false);
-        setSize(520, 260);
+        setSize(600, 260);
         setLocationRelativeTo(null);
     }
 
@@ -44,7 +44,7 @@ public class ConfigWindow extends JDialog {
 
         gbc.gridx = 1;
         gbc.weightx = 0.75;
-        tokenField = new JPasswordField();
+        tokenField = new JTextField();
         tokenField.setPreferredSize(new Dimension(320, 30));
         content.add(tokenField, gbc);
 
@@ -114,11 +114,13 @@ public class ConfigWindow extends JDialog {
     private void saveValues() {
         try {
             StringBuilder env = new StringBuilder();
-            env.append("TOKEN=").append(new String(tokenField.getPassword())).append("\n");
+            env.append("TOKEN=").append(new String(tokenField.getText())).append("\n");
             String baseUrl = baseUrlField.getText().trim();
             if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
                 env.append("BASE_URL=").append(baseUrl).append("\n");
             } else {
+                JOptionPane.showMessageDialog(this, "BASE_URL deve começar com http:// ou https://",
+                        "Erro de Validação", JOptionPane.ERROR_MESSAGE);
                 throw new IllegalArgumentException("BASE_URL deve começar com http:// ou https://");
             }
             Files.write(Paths.get(".env"), env.toString().getBytes());
@@ -136,7 +138,7 @@ public class ConfigWindow extends JDialog {
         new Thread(() -> {
             try {
                 ApiClient api = new ApiClient(baseUrlField.getText());
-                String token = new String(tokenField.getPassword());
+                String token = new String(tokenField.getText());
                 boolean ok = api.authenticateWithToken(token);
                 boolean conn = ok && api.testConnection();
                 SwingUtilities.invokeLater(() -> {
@@ -171,4 +173,5 @@ public class ConfigWindow extends JDialog {
         });
         cols.setVisible(true);
     }
+
 }

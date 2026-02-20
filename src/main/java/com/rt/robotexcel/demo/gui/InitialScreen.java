@@ -73,8 +73,8 @@ public class InitialScreen extends JFrame {
         titleLabel.setHorizontalAlignment(JLabel.CENTER);
 
         headerPanel.add(titleLabel, BorderLayout.CENTER);
-        // Gear/settings button on the right
-        JButton gearButton = new JButton("Config. ⚙️");
+        // Settings button on the right
+        JButton gearButton = new JButton("Configurar");
         gearButton.setFont(new Font("Segoe UI", Font.PLAIN, 18));
         gearButton.setForeground(Color.WHITE);
         gearButton.setBackground(new Color(66, 133, 244));
