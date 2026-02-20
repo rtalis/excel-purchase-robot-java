@@ -180,8 +180,9 @@ public class InitialScreen extends JFrame {
 
         JButton configColumns = createButton("Configurar Colunas", new Color(243, 244, 246), textPrimary, border);
         configColumns.addActionListener(e -> {
-            ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
-            cfg.setVisible(true);
+            ColumnManagerWindow cols = new ColumnManagerWindow();
+            cols.setLocationRelativeTo(InitialScreen.this);
+            cols.setVisible(true);
         });
 
         buttonPanel.add(configColumns);
