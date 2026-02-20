@@ -22,75 +22,100 @@ public class ConfigWindow extends JDialog {
         initUI();
         loadValues();
         setResizable(false);
-        setSize(600, 260);
+        setSize(680, 320);
         setLocationRelativeTo(null);
     }
 
     private void initUI() {
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setBackground(Color.WHITE);
-        content.setBorder(new EmptyBorder(12, 12, 12, 12));
+        Color primary = new Color(52, 120, 246);
+        Color surface = new Color(248, 250, 252);
+        Color border = new Color(225, 229, 235);
+
+        JPanel content = new JPanel(new BorderLayout(0, 14));
+        content.setBackground(surface);
+        content.setBorder(new EmptyBorder(16, 16, 16, 16));
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(surface);
+        JLabel title = new JLabel("Configurações de Acesso");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        JLabel subtitle = new JLabel("Token e endpoint da API");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitle.setForeground(new Color(90, 102, 117));
+        header.add(title, BorderLayout.NORTH);
+        header.add(subtitle, BorderLayout.CENTER);
+        content.add(header, BorderLayout.NORTH);
+
+        JPanel formCard = new JPanel(new GridBagLayout());
+        formCard.setBackground(Color.WHITE);
+        formCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(border, 1, true),
+                new EmptyBorder(16, 16, 16, 16)));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.insets = new Insets(10, 10, 10, 10);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.25;
-        JLabel tokenLabel = new JLabel("Chave (TOKEN):");
-        tokenLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        content.add(tokenLabel, gbc);
+        JLabel tokenLabel = new JLabel("Chave (TOKEN)");
+        tokenLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tokenLabel.setForeground(new Color(55, 65, 81));
+        formCard.add(tokenLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.75;
         tokenField = new JTextField();
-        tokenField.setPreferredSize(new Dimension(320, 30));
-        content.add(tokenField, gbc);
+        tokenField.setPreferredSize(new Dimension(360, 34));
+        formCard.add(tokenField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0.25;
-        JLabel urlLabel = new JLabel("Site (BASE_URL):");
-        urlLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        content.add(urlLabel, gbc);
+        JLabel urlLabel = new JLabel("Site (BASE_URL)");
+        urlLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        urlLabel.setForeground(new Color(55, 65, 81));
+        formCard.add(urlLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.75;
         baseUrlField = new JTextField();
-        baseUrlField.setPreferredSize(new Dimension(320, 30));
-        content.add(baseUrlField, gbc);
+        baseUrlField.setPreferredSize(new Dimension(360, 34));
+        formCard.add(baseUrlField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
-        statusLabel = new JLabel("");
-        statusLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        statusLabel = new JLabel("Pronto");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         statusLabel.setHorizontalAlignment(JLabel.CENTER);
-        content.add(statusLabel, gbc);
+        statusLabel.setForeground(new Color(90, 102, 117));
+        statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
+        formCard.add(statusLabel, gbc);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 6));
-        buttons.setBackground(Color.WHITE);
+        content.add(formCard, BorderLayout.CENTER);
 
-        JButton testBtn = new JButton("🔌 Testar");
-        JButton saveBtn = new JButton("💾 Salvar");
-        JButton colsBtn = new JButton("⚙️ Colunas");
-        JButton closeBtn = new JButton("Fechar");
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        buttons.setBackground(surface);
+
+        JButton colsBtn = createButton("Configurar colunas", new Color(243, 244, 246), new Color(55, 65, 81), border);
+        JButton testBtn = createButton("Testar conexão", new Color(234, 246, 255), primary, new Color(205, 228, 255));
+        JButton saveBtn = createButton("Salvar", primary, Color.WHITE, primary);
+        JButton closeBtn = createButton("Fechar", new Color(243, 244, 246), new Color(55, 65, 81), border);
 
         testBtn.addActionListener(e -> testConnection());
         saveBtn.addActionListener(e -> saveValues());
         colsBtn.addActionListener(e -> openColumns());
         closeBtn.addActionListener(e -> dispose());
 
+        buttons.add(colsBtn);
         buttons.add(testBtn);
         buttons.add(saveBtn);
-        buttons.add(colsBtn);
         buttons.add(closeBtn);
 
-        gbc.gridy = 3;
-        gbc.gridwidth = 2;
-        content.add(buttons, gbc);
+        content.add(buttons, BorderLayout.SOUTH);
 
         setContentPane(content);
     }
@@ -172,6 +197,19 @@ public class ConfigWindow extends JDialog {
             }
         });
         cols.setVisible(true);
+    }
+
+    private JButton createButton(String text, Color background, Color foreground, Color borderColor) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBackground(background);
+        button.setForeground(foreground);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor, 1, true),
+                new EmptyBorder(8, 14, 8, 14)));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
 
 }

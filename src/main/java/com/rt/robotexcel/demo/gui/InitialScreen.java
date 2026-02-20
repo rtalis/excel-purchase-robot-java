@@ -5,9 +5,10 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.rt.robotexcel.demo.ExcelPurchaseRobot;
@@ -15,6 +16,12 @@ import com.rt.robotexcel.demo.api.ApiClient;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class InitialScreen extends JFrame {
+
+    private final Color primary = new Color(52, 120, 246);
+    private final Color surface = new Color(248, 250, 252);
+    private final Color border = new Color(225, 229, 235);
+    private final Color textPrimary = new Color(55, 65, 81);
+    private final Color muted = new Color(90, 102, 117);
 
     private JLabel countdownLabel;
     private Timer countdownTimer;
@@ -37,8 +44,8 @@ public class InitialScreen extends JFrame {
     }
 
     public InitialScreen() {
-        setTitle("Excel Purchase Robot - Configuração Inicial");
-        setSize(800, 400);
+        setTitle("Excel Purchase Robot - Versão " + loadVersion());
+        setSize(960, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -46,110 +53,147 @@ public class InitialScreen extends JFrame {
     }
 
     private void initializeComponents() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel mainPanel = new JPanel(new BorderLayout(14, 14));
+        mainPanel.setBackground(surface);
+        mainPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         JPanel headerPanel = createHeaderPanel();
-        JPanel instructionsPanel = createInstructionsPanel();
-        JPanel searchOptionsPanel = createSearchOptionsPanel();
-        JPanel controlPanel = createControlPanel();
-
-        // Adiciona os painéis ao layout principal
         mainPanel.add(headerPanel, BorderLayout.NORTH);
-        mainPanel.add(instructionsPanel, BorderLayout.CENTER);
-        mainPanel.add(searchOptionsPanel, BorderLayout.WEST);
-        mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
-        // Define o painel principal como conteúdo da janela
+        JPanel center = new JPanel(new GridBagLayout());
+        center.setBackground(surface);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.weighty = 0.65;
+        center.add(createInstructionsPanel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weighty = 0.35;
+        center.add(createSearchOptionsPanel(), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        center.add(createControlPanel(), gbc);
+
+        mainPanel.add(center, BorderLayout.CENTER);
+
         setContentPane(mainPanel);
     }
 
     private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BorderLayout());
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(surface);
 
+        JPanel titles = new JPanel(new BorderLayout());
+        titles.setBackground(surface);
         JLabel titleLabel = new JLabel("Excel Purchase Robot");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setHorizontalAlignment(JLabel.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        titleLabel.setForeground(textPrimary);
+        JLabel subtitle = new JLabel("Configuração inicial e início rápido do robô");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitle.setForeground(muted);
+        titles.add(titleLabel, BorderLayout.NORTH);
+        titles.add(subtitle, BorderLayout.CENTER);
 
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
-        // Settings button on the right
-        JButton gearButton = new JButton("Configurar");
-        gearButton.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        gearButton.setForeground(Color.WHITE);
-        gearButton.setBackground(new Color(66, 133, 244));
-        gearButton.setFocusPainted(false);
-        gearButton.setBorderPainted(false);
-        gearButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton gearButton = createButton("Configurar", primary, Color.WHITE, primary);
         gearButton.addActionListener(e -> {
             ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
             cfg.setVisible(true);
         });
+
+        headerPanel.add(titles, BorderLayout.WEST);
         headerPanel.add(gearButton, BorderLayout.EAST);
         return headerPanel;
     }
 
     private JPanel createSearchOptionsPanel() {
-        JPanel panel = new JPanel();
+        JPanel panel = createCardPanel("Opções de Busca");
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder("Opções de Busca"));
 
         searchByPedidoRadio = new JRadioButton("Buscar por Nº do Pedido", true);
         searchByNfRadio = new JRadioButton("Buscar por Nº da NF", false);
+
+        for (JRadioButton rb : new JRadioButton[] { searchByPedidoRadio, searchByNfRadio }) {
+            rb.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            rb.setForeground(textPrimary);
+            rb.setBackground(Color.WHITE);
+            rb.setFocusPainted(false);
+        }
 
         ButtonGroup searchTypeGroup = new ButtonGroup();
         searchTypeGroup.add(searchByPedidoRadio);
         searchTypeGroup.add(searchByNfRadio);
 
+        panel.add(Box.createRigidArea(new Dimension(0, 4)));
         panel.add(searchByPedidoRadio);
-        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(Box.createRigidArea(new Dimension(0, 8)));
         panel.add(searchByNfRadio);
+        panel.add(Box.createVerticalGlue());
 
         return panel;
     }
 
     private JPanel createInstructionsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Instruções"));
+        JPanel panel = createCardPanel("Instruções");
+        panel.setLayout(new BorderLayout());
 
         JTextArea instructionsText = new JTextArea();
         instructionsText.setEditable(false);
         instructionsText.setWrapStyleWord(true);
         instructionsText.setLineWrap(true);
-        instructionsText.setBackground(panel.getBackground());
+        instructionsText.setBackground(Color.WHITE);
+        instructionsText.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        instructionsText.setForeground(textPrimary);
         instructionsText.setText(
-                "1. Configure os dados de acesso à API nos campos ao lado.\n\n" +
-                        "2. Verifique se as colunas foram configuradas corretamente. " +
-                        "Se necessário, use o botão \"Configurar Colunas\".\n\n" +
-                        "3. Abra sua planilha Excel de acordo com as colunas configuradas.\n\n" +
-                        "4. Selecione se deseja buscar por número de pedido ou por NF.\n\n" +
-                        "5. Clique em \"Iniciar Robô\" e posicione o cursor na coluna com o número.\n\n" +
-                        "6. Quando o robô iniciar, não mexa no mouse ou teclado para não interferir na automação.\n\n" +
-                        "7. O robô irá ler o número, buscar os dados na API e preencher a linha, " +
-                        "depois moverá para o próximo registro automaticamente.");
+                "1. Configure o token e a URL em Configurar.\n\n" +
+                        "2. Ajuste as colunas da planilha em Configurar Colunas.\n\n" +
+                        "3. Abra a planilha com o layout configurado.\n\n" +
+                        "4. Escolha se vai buscar por Pedido ou NF.\n\n" +
+                        "5. Clique em Iniciar Robô e clique na célula com o número.\n\n" +
+                        "6. Não use o mouse/teclado durante a execução.\n\n" +
+                        "7. O robô preenche a linha e segue para o próximo registro automaticamente.");
 
-        panel.add(new JScrollPane(instructionsText), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(instructionsText);
+        scroll.setBorder(null);
+        panel.add(scroll, BorderLayout.CENTER);
         return panel;
     }
 
     private JPanel createControlPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        JPanel panel = createCardPanel("Execução do Robô");
+        panel.setLayout(new BorderLayout(10, 10));
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        buttonPanel.setOpaque(false);
 
-        JButton startButton = new JButton("Iniciar Robô");
-        startButton.setFont(new Font(startButton.getFont().getName(), Font.BOLD, startButton.getFont().getSize()));
-
+        JButton startButton = createButton("Iniciar Robô", primary, Color.WHITE, primary);
+        startButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         startButton.addActionListener(e -> startCountdown());
 
-        countdownLabel = new JLabel("Aguardando...");
-        countdownLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        countdownLabel.setHorizontalAlignment(JLabel.CENTER);
+        JButton configColumns = createButton("Configurar Colunas", new Color(243, 244, 246), textPrimary, border);
+        configColumns.addActionListener(e -> {
+            ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
+            cfg.setVisible(true);
+        });
 
+        buttonPanel.add(configColumns);
         buttonPanel.add(startButton);
 
-        panel.add(buttonPanel, BorderLayout.CENTER);
-        panel.add(countdownLabel, BorderLayout.SOUTH);
+        countdownLabel = new JLabel("Pronto para iniciar");
+        countdownLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        countdownLabel.setHorizontalAlignment(JLabel.LEFT);
+        countdownLabel.setForeground(textPrimary);
+
+        panel.add(countdownLabel, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
 
         return panel;
     }
@@ -175,13 +219,11 @@ public class InitialScreen extends JFrame {
         if (isRunning)
             return;
 
-        // Check if credentials are set
         if (!areCredentialsSet()) {
             JOptionPane.showMessageDialog(InitialScreen.this,
                     "Configure e salve os dados de acesso (Token e URL)!",
                     "Configuração Necessária", JOptionPane.WARNING_MESSAGE);
 
-            // Open ConfigWindow
             ConfigWindow cfg = new ConfigWindow(InitialScreen.this);
             cfg.setVisible(true);
             return;
@@ -212,7 +254,6 @@ public class InitialScreen extends JFrame {
                             String token = dotenv.get("TOKEN");
                             String baseUrl = dotenv.get("BASE_URL");
 
-                            // Test connection
                             ApiClient api = new ApiClient(baseUrl);
                             boolean authenticated = api.authenticateWithToken(token);
 
@@ -240,9 +281,7 @@ public class InitialScreen extends JFrame {
                                 return;
                             }
 
-                            SwingUtilities.invokeLater(() -> {
-                                countdownLabel.setText("Robô em execução!");
-                            });
+                            SwingUtilities.invokeLater(() -> countdownLabel.setText("Robô em execução!"));
 
                             String[] args;
                             if (searchByNfRadio.isSelected()) {
@@ -272,5 +311,47 @@ public class InitialScreen extends JFrame {
         });
 
         countdownTimer.start();
+    }
+
+    private String loadVersion() {
+        Properties props = new Properties();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+            if (is != null) {
+                props.load(is);
+            }
+        } catch (Exception ignored) {
+            // Best-effort; fallback below
+        }
+        String raw = props.getProperty("app.version", "0.0.0");
+        return raw.replace("v", "");
+    }
+
+    private JPanel createCardPanel(String title) {
+        JPanel card = new JPanel();
+        card.setLayout(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(border, 1, true),
+                new EmptyBorder(14, 14, 14, 14)));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        titleLabel.setForeground(textPrimary);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 8, 0));
+        card.add(titleLabel, BorderLayout.NORTH);
+        return card;
+    }
+
+    private JButton createButton(String text, Color background, Color foreground, Color borderColor) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setBackground(background);
+        button.setForeground(foreground);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor, 1, true),
+                new EmptyBorder(8, 14, 8, 14)));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
 }

@@ -29,19 +29,21 @@ public class ExcelUpdater {
         this.inputFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH);
         this.outputFormat = new SimpleDateFormat("dd/MM/yyyy");
     }
-    
+
     private List<ExcelColumnConfig> columnConfigs;
-    
+
     public void setApiClient(ApiClient apiClient) {
         this.apiClient = apiClient;
     }
-    
+
     public void setColumnConfigs(List<ExcelColumnConfig> configs) {
         this.columnConfigs = configs;
     }
+
     private String extractValueFromJson(JSONObject purchase, ExcelColumnConfig config) {
         try {
-            if (config.getJsonField().isEmpty()) return ""; // coluna em branco
+            if (config.getJsonField().isEmpty())
+                return ""; // coluna em branco
 
             // Tratamentos especiais para alguns campos
             if (config.getJsonField().equals("cod_emp1_source")) {
@@ -60,8 +62,8 @@ public class ExcelUpdater {
             if (config.getDisplayName().equals("OBSERVAÇÃO")) {
                 String observacao = purchase.optString("observacao", " ");
                 if (!observacao.isEmpty()) {
-                   observacao = observacao.replaceAll("\\r?\\n", " ");
-                   return observacao;
+                    observacao = observacao.replaceAll("\\r?\\n", " ");
+                    return observacao;
                 }
                 return "";
             }
@@ -134,19 +136,19 @@ public class ExcelUpdater {
             if (config.getJsonField().equals("nfe_valor") || config.getJsonField().equals("nfe_transportadora")) {
                 // Fetch NFE data if not already cached
                 if (nfeDataCache == null && apiClient != null) {
-                    String numNf = purchase.optJSONArray("nfes") != null && 
-                                   !purchase.getJSONArray("nfes").isEmpty() 
-                                   ? purchase.getJSONArray("nfes").getJSONObject(0).optString("num_nf", null) 
-                                   : null;
-                    
+                    String numNf = purchase.optJSONArray("nfes") != null &&
+                            !purchase.getJSONArray("nfes").isEmpty()
+                                    ? purchase.getJSONArray("nfes").getJSONObject(0).optString("num_nf", null)
+                                    : null;
+
                     if (numNf != null && !numNf.isEmpty()) {
                         String fornecedorId = purchase.optString("cod_for", null);
                         String fornecedorNome = purchase.optString("fornecedor_descricao", null);
-                        String dtEnt = purchase.optJSONArray("nfes") != null && 
-                                      !purchase.getJSONArray("nfes").isEmpty() 
-                                      ? purchase.getJSONArray("nfes").getJSONObject(0).optString("dt_ent", null) 
-                                      : null;
-                        
+                        String dtEnt = purchase.optJSONArray("nfes") != null &&
+                                !purchase.getJSONArray("nfes").isEmpty()
+                                        ? purchase.getJSONArray("nfes").getJSONObject(0).optString("dt_ent", null)
+                                        : null;
+
                         // Format dtEnt to YYYY-MM-DD if present
                         if (dtEnt != null && !dtEnt.isEmpty()) {
                             try {
@@ -162,7 +164,7 @@ public class ExcelUpdater {
                                 dtEnt = null;
                             }
                         }
-                        
+
                         String nfeResponse = apiClient.getNfeByNumber(numNf, fornecedorId, fornecedorNome, dtEnt);
                         if (nfeResponse != null) {
                             try {
@@ -188,10 +190,14 @@ public class ExcelUpdater {
                                     // Use resp as the full data
                                     nfeDataCache = new JSONObject();
                                     // copy chave/numero/valor_total if present
-                                    if (resp.has("chave")) nfeDataCache.put("chave", resp.optString("chave"));
-                                    if (resp.has("numero")) nfeDataCache.put("numero", resp.optString("numero"));
-                                    if (resp.has("valor_total")) nfeDataCache.put("valor_total", resp.optDouble("valor_total"));
-                                    if (resp.has("valor")) nfeDataCache.put("valor", resp.optDouble("valor"));
+                                    if (resp.has("chave"))
+                                        nfeDataCache.put("chave", resp.optString("chave"));
+                                    if (resp.has("numero"))
+                                        nfeDataCache.put("numero", resp.optString("numero"));
+                                    if (resp.has("valor_total"))
+                                        nfeDataCache.put("valor_total", resp.optDouble("valor_total"));
+                                    if (resp.has("valor"))
+                                        nfeDataCache.put("valor", resp.optDouble("valor"));
                                     // attach full data for transportadora extraction
                                     nfeDataCache.put("full_data", resp);
                                 }
@@ -201,14 +207,14 @@ public class ExcelUpdater {
                         }
                     }
                 }
-                
+
                 // Extract the requested field from cached NFE data
                 if (nfeDataCache != null) {
                     if (config.getJsonField().equals("nfe_valor")) {
                         double valor = nfeDataCache.optDouble("valor", nfeDataCache.optDouble("valor_total", 0.0));
                         return valor > 0 ? String.format("%.2f", valor) : "";
                     }
-                    
+
                     if (config.getJsonField().equals("nfe_transportadora")) {
                         // Try to get transportadora from full NFE data
                         if (nfeDataCache.has("full_data")) {
@@ -239,7 +245,7 @@ public class ExcelUpdater {
                         return "";
                     }
                 }
-                
+
                 return "";
             }
 
@@ -249,18 +255,19 @@ public class ExcelUpdater {
             return "";
         }
     }
-    
+
     private String extractSolicitacao(String observacao) {
-        if (observacao == null) return "";
-        
+        if (observacao == null)
+            return "";
+
         // Remove acentos e converte para minúsculo
         String normalizedObs = observacao.toLowerCase()
-            .replaceAll("[àáâãäå]", "a")
-            .replaceAll("[èéêë]", "e")
-            .replaceAll("[ìíîï]", "i")
-            .replaceAll("[òóôõö]", "o")
-            .replaceAll("[ùúûü]", "u")
-            .replaceAll("[ç]", "c");
+                .replaceAll("[àáâãäå]", "a")
+                .replaceAll("[èéêë]", "e")
+                .replaceAll("[ìíîï]", "i")
+                .replaceAll("[òóôõö]", "o")
+                .replaceAll("[ùúûü]", "u")
+                .replaceAll("[ç]", "c");
 
         // Procura por "solicitacao" seguido de números
         int index = normalizedObs.indexOf("solicitacao");
@@ -274,10 +281,9 @@ public class ExcelUpdater {
         return "";
     }
 
-    
-
     private Date parseIsoToDate(String dateStr) throws Exception {
-        if (dateStr == null || dateStr.isEmpty()) return null;
+        if (dateStr == null || dateStr.isEmpty())
+            return null;
         try {
             // Try full offset-aware parser first
             return Date.from(OffsetDateTime.parse(dateStr).toInstant());
@@ -293,25 +299,25 @@ public class ExcelUpdater {
         }
     }
 
-
     public int updatePurchaseOrder(String jsonResponse) {
         try {
             // Reset NFE cache for each new purchase order
             nfeDataCache = null;
-            
+
             JSONObject json = new JSONObject(jsonResponse);
             JSONObject purchase;
             String searchMode = "nfes[0].num_nf";
             if (json.has("purchases")) {
-                purchase = json.getJSONArray("purchases")
-                    .getJSONObject(0)
-                    .getJSONObject("order");
+                var purchases = json.getJSONArray("purchases");
+                if (purchases.length() == 0) {
+                    return 1; // not found
+                }
+                purchase = purchases.getJSONObject(0).getJSONObject("order");
                 searchMode = "cod_pedc";
             } else {
                 purchase = json;
             }
-            
-           
+
             // Encontra posição do PEDIDO
             int referenceIndex = -1;
             for (int i = 0; i < columnConfigs.size(); i++) {
@@ -320,18 +326,19 @@ public class ExcelUpdater {
                     break;
                 }
             }
-            
+
             if (referenceIndex == -1) {
                 throw new IllegalStateException(String.format("Campo %s não encontrado na configuração.", searchMode));
             }
-            
+
             // Posiciona no PEDIDO
             robot.pressEsc();
             int actualPosition = referenceIndex - 1;
 
             for (ExcelColumnConfig config : columnConfigs) {
                 int moves = config.getPosition();
-                System.out.println("Coluna: " + config.getDisplayName() + ", Posição: " + moves + ", Posição Atual: " + actualPosition);
+                System.out.println("Coluna: " + config.getDisplayName() + ", Posição: " + moves + ", Posição Atual: "
+                        + actualPosition);
                 if (moves < actualPosition) {
                     for (int i = 0; i < actualPosition - moves; i++) {
                         robot.pressLeftArrow();
@@ -343,7 +350,7 @@ public class ExcelUpdater {
                         actualPosition++;
                     }
                 }
-                
+
                 String value = extractValueFromJson(purchase, config);
                 if (!value.isEmpty() && !value.equals("SKIP")) {
                     ClipboardManager.setContent(value);
@@ -351,17 +358,17 @@ public class ExcelUpdater {
                 }
             }
             // Posiciona no PEDIDO novamente
-            
+
             while (actualPosition + 1 > referenceIndex) {
-                    robot.pressLeftArrow();
-                    actualPosition--;
-                
-            }      
+                robot.pressLeftArrow();
+                actualPosition--;
+
+            }
             while (actualPosition + 1 < referenceIndex) {
                 robot.pressRightArrow();
                 actualPosition++;
-            
-        }
+
+            }
             robot.pressDownArrow();
             Thread.sleep(200);
             return 0;

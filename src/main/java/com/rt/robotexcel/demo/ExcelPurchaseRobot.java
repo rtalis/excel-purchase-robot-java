@@ -176,7 +176,14 @@ public class ExcelPurchaseRobot {
                             System.out.println(searchType + " " + codPedcTrimmed + " atualizado com sucesso.");
 
                         } else if (success == 1) {
+                            String companyInfo = (codEmp1 != null && !codEmp1.trim().isEmpty())
+                                    ? " (empresa " + codEmp1.trim() + ")"
+                                    : "";
+                            String msg = (searchByNF ? "NF " : "Pedido ") + codPedcTrimmed + companyInfo
+                                    + " não encontrado.";
+                            JOptionPane.showMessageDialog(null, msg, "Não encontrado", JOptionPane.ERROR_MESSAGE);
                             System.out.println("Nenhum " + searchType + " encontrado para o número: " + codPedcTrimmed);
+                            break;
                         } else {
                             System.out.println("Falha ao atualizar o " + searchType + " " + codPedcTrimmed + ".");
                             break;
