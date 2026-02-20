@@ -15,6 +15,8 @@ import java.awt.event.WindowEvent;
 public class ConfigWindow extends JDialog {
     private JTextField tokenField;
     private JTextField baseUrlField;
+    private JSlider delaySlider;
+    private JLabel delayValueLabel;
     private JLabel statusLabel;
 
     public ConfigWindow(Frame owner) {
@@ -22,7 +24,7 @@ public class ConfigWindow extends JDialog {
         initUI();
         loadValues();
         setResizable(false);
-        setSize(680, 320);
+        setSize(680, 400);
         setLocationRelativeTo(null);
     }
 
@@ -39,7 +41,7 @@ public class ConfigWindow extends JDialog {
         header.setBackground(surface);
         JLabel title = new JLabel("Configurações de Acesso");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        JLabel subtitle = new JLabel("Token e endpoint da API");
+        JLabel subtitle = new JLabel("Token, endpoint da API e velocidade");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subtitle.setForeground(new Color(90, 102, 117));
         header.add(title, BorderLayout.NORTH);
@@ -86,6 +88,33 @@ public class ConfigWindow extends JDialog {
 
         gbc.gridx = 0;
         gbc.gridy = 2;
+        gbc.weightx = 0.25;
+        JLabel delayLabel = new JLabel("Velocidade");
+        delayLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        delayLabel.setForeground(new Color(55, 65, 81));
+        formCard.add(delayLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.75;
+        JPanel delayPanel = new JPanel(new BorderLayout(10, 0));
+        delayPanel.setBackground(Color.WHITE);
+
+        delaySlider = new JSlider(JSlider.HORIZONTAL, 5, 20, 10);
+        delaySlider.setPreferredSize(new Dimension(300, 40));
+        delaySlider.addChangeListener(e -> updateDelayLabel());
+
+        delayValueLabel = new JLabel("1.0x");
+        delayValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        delayValueLabel.setForeground(primary);
+        delayValueLabel.setPreferredSize(new Dimension(50, 20));
+        delayValueLabel.setHorizontalAlignment(JLabel.CENTER);
+
+        delayPanel.add(delaySlider, BorderLayout.CENTER);
+        delayPanel.add(delayValueLabel, BorderLayout.EAST);
+        formCard.add(delayPanel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         statusLabel = new JLabel("Pronto");
@@ -130,10 +159,34 @@ public class ConfigWindow extends JDialog {
                 String b = dotenv.get("BASE_URL");
                 if (b != null)
                     baseUrlField.setText(b);
+                String d = dotenv.get("DELAY_TIME");
+                if (d != null) {
+                    try {
+                        long delayMs = Long.parseLong(d);
+                        // Convert milliseconds to slider value (5-20)
+                        // Formula: slider = (1300 - delay_ms) / 60
+                        int sliderValue = (int) ((1300 - delayMs) / 60.0);
+                        sliderValue = Math.max(5, Math.min(20, sliderValue));
+                        delaySlider.setValue(sliderValue);
+                    } catch (NumberFormatException e) {
+                        delaySlider.setValue(10); // default 1.0x
+                    }
+                } else {
+                    delaySlider.setValue(10); // default 1.0x
+                }
+            } else {
+                delaySlider.setValue(10); // default 1.0x
             }
         } catch (Exception e) {
             statusLabel.setText("Erro ao carregar: " + e.getMessage());
+            delaySlider.setValue(10); // default 1.0x
         }
+    }
+
+    private void updateDelayLabel() {
+        int sliderValue = delaySlider.getValue();
+        double multiplier = sliderValue / 10.0;
+        delayValueLabel.setText(String.format("%.1fx", multiplier));
     }
 
     private void saveValues() {
@@ -148,6 +201,14 @@ public class ConfigWindow extends JDialog {
                         "Erro de Validação", JOptionPane.ERROR_MESSAGE);
                 throw new IllegalArgumentException("BASE_URL deve começar com http:// ou https://");
             }
+
+            // Convert slider value (5-20) to delay time in milliseconds
+            // Formula: delay_ms = 1300 - 60 * slider_value
+            // 0.5x (5) = 1000ms, 1.0x (10) = 700ms, 2.0x (20) = 100ms
+            int sliderValue = delaySlider.getValue();
+            long delayMs = 1300 - (sliderValue * 60);
+            env.append("DELAY_TIME=").append(delayMs).append("\n");
+
             Files.write(Paths.get(".env"), env.toString().getBytes());
             statusLabel.setText("✅ Salvo");
             statusLabel.setForeground(new Color(40, 167, 69));
